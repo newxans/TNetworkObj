@@ -29,6 +29,7 @@ public enum Protocols : uint
     GC_HOST_CHANGE = 4363u,
     CG_USER_REVIVE_MP = 12u,
     GC_USER_REVIVE_MP = 4108u,
+    GC_TAKE_USER_MEDKIT = 4364u,
     CG_USER_DEAD = 13u,
     CG_QUICK_ROOM_LIST = 15u,
     GC_QUICK_ROOM_LIST = 4111u,

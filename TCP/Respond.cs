@@ -84,6 +84,15 @@ class Responder
                 case Protocols.CG_USER_STATUS:
                     await PlayerMove();
                     break;
+                case Protocols.CG_USER_INJURED:
+                    await PlayerInjury();
+                    break;
+                case Protocols.CG_USER_REVIVE:
+                    await PlayerRevive();
+                    break;
+                case Protocols.CG_USER_REVIVE_MP:
+                    await PlayerMPRevive();
+                    break;
                 default:
                     Logger.Error($"{Enum.GetName(typeof(Protocols), (Protocols)packetType)} unimplemented");
                     break;
@@ -343,6 +352,56 @@ class Responder
         p.m_iPingTime = local;
 
         await Rooms.SendToRoom(Clients.GetUser(client).RoomId, p.Pack(), client);
+    }
+
+    async Task PlayerInjury()
+    {
+        uint userId = rpacket.ruint();
+        ulong hit1 = rpacket.rulong();
+        ulong hit2 = rpacket.rulong();
+        ulong hit3 = rpacket.rulong();
+
+        GPlayerInjury p = new GPlayerInjury();
+
+        p.m_iUserId = userId;
+        p.m_iInjury_val = (long)hit1;
+        p.m_total_hp_val = (long)hit2;
+        p.m_cur_hp_val = (long)hit3;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task PlayerRevive()
+    {
+        uint userId = rpacket.ruint();
+
+        GStandard p = new GStandard();
+        p.m_iUserId = userId;
+        p.protocol = Protocols.GC_USER_REVIVE;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task PlayerMPRevive()
+    {
+        uint action = rpacket.ruint();
+        uint userId = rpacket.ruint();
+
+        GPlayerMPRevive p = new GPlayerMPRevive();
+        p.m_iResult = 0u;
+        p.m_iUserId = userId;
+
+        GTakeMedkit take = new GTakeMedkit();
+        take.m_iActionRevived = action;
+        take.m_iUserRevived = userId;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack());
+        await Rooms.SendToRoom(GetRoomId(client), take.Pack());
+    }
+
+    int GetRoomId(TcpClient c)
+    {
+        return Clients.GetUser(c).RoomId;
     }
 
     Writer DefaultPacket(Protocols packetType, bool result = false)

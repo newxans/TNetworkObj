@@ -13,7 +13,7 @@ namespace NetworkObj.TCP
 
             if (user == null)
             {
-                Logger.Info("Disconnect client, no info was found");
+                Logger.Warning("Disconnect client, no info was found");
                 return -1;
             }
 
@@ -50,7 +50,7 @@ namespace NetworkObj.TCP
         {
             if (!rooms.TryGetValue(roomId, out Room? room)) return;
             room.Players.Remove(client);
-            Logger.Info($"User {Clients.GetUser(client).UserId} left Room {roomId}");
+            Logger.Log($"User {Clients.GetUser(client).UserId} left Room {roomId}");
         }
 
         public static Room? GetRoom(int roomid)

@@ -44,7 +44,7 @@ class Responder
 
             if (Clients.GetUser(client) == null)
             {
-                Logger.Info($"Breaking {client.Client.RemoteEndPoint}'s connection (No user connected to client)");
+                Logger.Warning($"Breaking {client.Client.RemoteEndPoint}'s connection (No user connected to client)");
                 client.Close();
                 break;
             }
@@ -133,9 +133,7 @@ class Responder
         User host = Clients.GetUser(client);
         if (host.RoomId == -1 || !host.RoomMaster) return;
 
-        Logger.Info($"Room {host.RoomId} started");
-
-        Logger.Info($"MAP ID: {Rooms.GetRoom(host.RoomId)?.MapId}");
+        Logger.Log($"Room {host.RoomId} started");
 
         await Rooms.SendToRoom(host.RoomId, DefaultPacket(Protocols.GC_START_GAME_NOTIFY));
         await Rooms.SendToRoom(host.RoomId, DefaultPacket(Protocols.GC_START_GAME));
@@ -147,7 +145,7 @@ class Responder
 
         if (host.RoomId == -1 || !host.RoomMaster) return;
 
-        Logger.Info($"Room {host.RoomId} destroyed");
+        Logger.Log($"Room {host.RoomId} destroyed");
 
         await Rooms.SendToRoom(host.RoomId, DefaultPacket(Protocols.GC_DESTROY_ROOM, true));
         await Rooms.DeleteRoom(host.RoomId);
@@ -175,15 +173,9 @@ class Responder
 
         if (room == null) return;
 
-        Logger.Log($"hi{(int)roomId}");
-
         User creator = Clients.GetUser(room.Players[0]);
 
-        Logger.Log("hi1");
-
         GRoomInfo p = new GRoomInfo();
-
-        Logger.Log("hi2");
 
         p.m_iResult = 0u;
         p.m_iMapId = (uint)room.MapId;
@@ -195,8 +187,6 @@ class Responder
         p.m_iMaxUserNum = (uint)room.Max;
         p.m_iRoomId = roomId;
 
-        Logger.Log("hi3");
-
         await Clients.SendToClient(client, p.Pack());
     }
 
@@ -207,8 +197,6 @@ class Responder
         string name = rpacket.rstring();
         uint avt = rpacket.ruint();
         uint days = rpacket.ruint();
-
-        Logger.Log("JJJJ");
 
         User user = Clients.GetUser(client);
         Room? room = Rooms.GetRoom((int)roomId);
@@ -241,6 +229,7 @@ class Responder
         user.Avatar = (int)avt;
         user.Level = (int)days;
         user.RoomMaster = false;
+        user.RoomId = (int)roomId;
 
         room.Players.Add(client);
 
@@ -269,7 +258,7 @@ class Responder
         await Clients.SendToClient(client, p.Pack());
         await Rooms.SendToRoom((int)roomId, notify.Pack(), client);
 
-        Logger.Info($"User {user.UserId} join Room {roomId}");
+        Logger.Log($"User {user.UserId} join Room {roomId}");
     }
 
     async Task PlayerSpawn()

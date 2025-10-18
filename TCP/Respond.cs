@@ -75,6 +75,15 @@ class Responder
                 case Protocols.CG_USER_SPAWN:
                     await PlayerSpawn();
                     break;
+                case Protocols.CG_USER_ACTION:
+                    await PlayerAction();
+                    break;
+                case Protocols.CG_USER_BONUS_ACTION:
+                    await PlayerBonusAction();
+                    break;
+                case Protocols.CG_USER_STATUS:
+                    await PlayerMove();
+                    break;
                 default:
                     Logger.Error($"{Enum.GetName(typeof(Protocols), (Protocols)packetType)} unimplemented");
                     break;
@@ -282,6 +291,58 @@ class Responder
         p.m_iWeaponIndex3 = wp3;
 
         await Rooms.SendToRoom(user.RoomId, p.Pack(), client);
+    }
+
+    async Task PlayerAction()
+    {
+        uint userId = rpacket.ruint();
+        uint actionId = rpacket.ruint();
+
+        GPlayerAction p = new GPlayerAction();
+
+        p.m_iUserId = userId;
+        p.m_iAction = actionId;
+
+        await Rooms.SendToRoom(Clients.GetUser(client).RoomId, p.Pack(), client);
+    }
+
+    async Task PlayerBonusAction()
+    {
+        uint userId = rpacket.ruint();
+        uint auxActionId = rpacket.ruint();
+
+        GPlayerBonusAction p = new GPlayerBonusAction();
+
+        p.m_iUserId = userId;
+        p.m_iBonusAction = auxActionId;
+
+        await Rooms.SendToRoom(Clients.GetUser(client).RoomId, p.Pack(), client);
+    }
+
+    async Task PlayerMove() // credit: overmet15 for vector struct otherwise sync would be TERRIBLE
+    {
+        uint userId = rpacket.ruint();
+
+        Vector3 pos = new Vector3();
+        pos.FromReader(rpacket);
+
+        Vector3 rot = new Vector3();
+        rot.FromReader(rpacket);
+
+        Vector3 dir = new Vector3();
+        dir.FromReader(rpacket);
+
+        ulong local = rpacket.rulong();
+
+        GPlayerMove p = new GPlayerMove();
+
+        p.m_iUserId = userId;
+        p.pos = pos;
+        p.rot = rot;
+        p.dir = dir;
+        p.m_iPingTime = local;
+
+        await Rooms.SendToRoom(Clients.GetUser(client).RoomId, p.Pack(), client);
     }
 
     Writer DefaultPacket(Protocols packetType, bool result = false)

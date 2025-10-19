@@ -26,6 +26,7 @@ public enum Protocols : uint
     GC_USER_SPAWN = 4361u,
     CG_ENEMY_DEAD = 10u,
     GC_ENEMY_DEAD = 4106u,
+    GC_ENEMY_DEAD_NOTIFY = 4362u,
     GC_HOST_CHANGE = 4363u,
     CG_USER_REVIVE_MP = 12u,
     GC_USER_REVIVE_MP = 4108u,

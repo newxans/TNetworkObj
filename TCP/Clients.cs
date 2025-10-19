@@ -17,9 +17,9 @@ namespace NetworkObj.TCP
             Users.Add(client, user);
         }
 
-        public static User GetUser(TcpClient client)
+        public static User? GetUser(TcpClient client)
         {
-            if (Users.TryGetValue(client, out User user))
+            if (Users.TryGetValue(client, out User? user))
             {
                 return user;
             }

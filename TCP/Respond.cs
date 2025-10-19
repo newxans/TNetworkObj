@@ -93,6 +93,12 @@ class Responder
                 case Protocols.CG_USER_REVIVE_MP:
                     await PlayerMPRevive();
                     break;
+                case Protocols.CG_USER_CHANGE_WEAPON:
+                    await PlayerChangeWeapon();
+                    break;
+                case Protocols.CG_PGM_FIRE:
+                    await PGM();
+                    break;
                 default:
                     Logger.Error($"{Enum.GetName(typeof(Protocols), (Protocols)packetType)} unimplemented");
                     break;
@@ -173,10 +179,18 @@ class Responder
     {
         User user = Clients.GetUser(client);
         if (user.RoomId == -1) return;
-        if (user.RoomMaster) { await DestroyRoom(); return; }
 
         GLeaveRoom notify = new GLeaveRoom();
         notify.m_iUserId = (uint)user.UserId;
+
+        Room? r = Rooms.GetRoom(user.RoomId);
+
+        r.Online = r.Online - 1;
+
+        if (Rooms.GetRoom(user.RoomId)?.Online == 0)
+        {
+            await Rooms.DeleteRoom(user.RoomId);
+        }
 
         await Rooms.SendToRoom(user.RoomId, notify.Pack());
         await Rooms.LeaveRoom(user.RoomId, client);
@@ -249,6 +263,7 @@ class Responder
         user.RoomMaster = false;
         user.RoomId = (int)roomId;
 
+        room.Online = room.Online + 1;
         room.Players.Add(client);
 
         room.Players.ForEach(async (TcpClient rando) => {
@@ -397,6 +412,31 @@ class Responder
 
         await Rooms.SendToRoom(GetRoomId(client), p.Pack());
         await Rooms.SendToRoom(GetRoomId(client), take.Pack());
+    }
+
+    async Task PlayerChangeWeapon()
+    {
+        uint userId = rpacket.ruint();
+        uint weaponIndex = rpacket.ruint();
+
+        GChangeWeapon p = new GChangeWeapon();
+        p.m_iUserId = userId;
+        p.m_iWeaponIndex = weaponIndex;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task PGM()
+    {
+        uint userId = rpacket.ruint();
+        Vector3 pos = new Vector3();
+        pos.FromReader(rpacket);
+
+        GPGM p = new GPGM();
+        p.m_iUserId = userId;
+        p.m_Position = pos;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
     }
 
     int GetRoomId(TcpClient c)

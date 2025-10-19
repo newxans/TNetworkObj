@@ -1,0 +1,1 @@
+dotnet publish -r linux-x64 -c Release -p:PublishSingleFile=true -p:SelfContained=true -p:PublishTrimmed=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=false

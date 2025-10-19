@@ -15,27 +15,21 @@ namespace NetworkObj.TCP
 
             while (true)
             {
-                var clientReq = listener.AcceptTcpClientAsync();
-                var ready = await Task.WhenAny(clientReq, Task.Delay(100));
+                TcpClient client = await listener.AcceptTcpClientAsync();
 
-                if (clientReq == ready)
+                Logger.Info($"Client {client.Client.RemoteEndPoint} connected");
+
+                _ = Task.Run(async () =>
                 {
-                    TcpClient client = clientReq.Result;
-
-                    Logger.Info($"Client {client.Client.RemoteEndPoint} connected");
-
-                    _ = Task.Run(async () =>
+                    try
                     {
-                        try
-                        {
-                            await new Responder().Respond(client);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Error($"Error with client {client.Client.RemoteEndPoint}: {ex.Message}");
-                        }
-                    });
-                }
+                        await new Responder().Respond(client);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Error with client {client.Client.RemoteEndPoint}: {ex.Message}");
+                    }
+                });
             }
         }
     }

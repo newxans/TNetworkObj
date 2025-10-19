@@ -9,7 +9,7 @@ namespace NetworkObj
         static async Task Main()
         {
             Listener Server = new Listener();
-            IPAddress IP = IPAddress.Parse("127.0.0.1");
+            IPAddress IP = IPAddress.Any;
             int Port = 4201;
 
             await Server.Start(IP, Port);

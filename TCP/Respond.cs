@@ -130,6 +130,12 @@ class Responder
                 case Protocols.CG_GAME_OVER:
                     await GameOver();
                     break;
+                case Protocols.CG_COOP_WINNER:
+                    await Win();
+                    break;
+                case Protocols.CG_KICK_USER:
+                    await Kick();
+                    break;
                 default:
                     Logger.Error($"{Enum.GetName(typeof(Protocols), (Protocols)packetType)} unimplemented");
                     break;
@@ -649,7 +655,51 @@ class Responder
         GStandard p = new GStandard();
         p.m_iUserId = userId;
         p.protocol = Protocols.GC_GAME_OVER;
-        await Clients.SendToClient(client, p.Pack());
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task Win()
+    {
+        uint winnerId = rpacket.ruint();
+        GStandard p = new GStandard();
+        p.m_iUserId = winnerId;
+        p.protocol = Protocols.GC_COOP_WINNER;
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task Kick()
+    {
+        uint userId = rpacket.ruint();
+        Room room = Rooms.GetRoom(GetRoomId(client));
+
+        if (room == null || !Clients.GetUser(client).RoomMaster) return;
+
+        GStandard notify = new GStandard();
+
+        notify.m_iUserId = userId;
+        notify.protocol = Protocols.GC_KICK_USER_NOTIFY;
+
+        GPlayerKick p = new GPlayerKick();
+
+        p.m_iResult = 0u;
+        p.m_iUserId = userId;
+
+        TcpClient random = new TcpClient();
+
+        room.Players.ForEach(async (TcpClient rando) =>
+        {
+            User user = Clients.GetUser(rando);
+
+            if (user.UserId == userId)
+            {
+                random = rando;
+            }
+        });
+
+        await Rooms.SendToRoom(GetRoomId(client), notify.Pack());
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack());
+        await Clients.SendToClient(random, DefaultPacket(Protocols.GC_KICKED_BY));
+        await Rooms.LeaveRoom(GetRoomId(client), random);
     }
 
     int GetRoomId(TcpClient c)

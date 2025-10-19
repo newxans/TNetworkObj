@@ -50,6 +50,7 @@ namespace NetworkObj.TCP
         {
             if (!rooms.TryGetValue(roomId, out Room? room)) return;
             room.Players.Remove(client);
+            room.Online = room.Online - 1;
             Logger.Log($"User {Clients.GetUser(client).UserId} left Room {roomId}");
         }
 

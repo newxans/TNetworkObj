@@ -21,6 +21,7 @@ public enum Protocols : uint
     GC_LEAVE_ROOM_NOTIFY = 4358u,
     CG_KICK_USER = 7u,
     GC_KICK_USER = 4013u,
+    GC_KICK_USER_NOTIFY = 4359u,
     GC_KICKED_BY = 4615u,
     CG_USER_SPAWN = 9u,
     GC_USER_SPAWN = 4361u,

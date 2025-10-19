@@ -5,7 +5,7 @@ namespace NetworkObj.Packets
 {
     class GEnemyTarget : ServerPacket
     {
-        public required string m_enemyID;
+        public string m_enemyID;
 
         public uint target_id;
 

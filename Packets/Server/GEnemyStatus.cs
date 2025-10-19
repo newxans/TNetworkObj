@@ -5,7 +5,7 @@ namespace NetworkObj.Packets
 {
     class GEnemyStatus : ServerPacket
     {
-        public required string m_enemyID;
+        public string m_enemyID;
 
         public Vector3 m_Position;
 

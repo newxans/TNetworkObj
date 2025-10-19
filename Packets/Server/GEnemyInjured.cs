@@ -5,7 +5,7 @@ namespace NetworkObj.Packets
 {
     class GEnemyInjured : ServerPacket
     {
-        public required string m_enemyID;
+        public string m_enemyID;
 
         public long m_iDamage;
 

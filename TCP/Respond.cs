@@ -1,5 +1,6 @@
 using NetworkObj.Packets;
 using NetworkObj.Utils;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Sockets;
 using System.Reflection.Metadata;
@@ -98,6 +99,30 @@ class Responder
                     break;
                 case Protocols.CG_PGM_FIRE:
                     await PGM();
+                    break;
+                case Protocols.CG_ENEMY_SPAWN:
+                    await EnemySpawn();
+                    break;
+                case Protocols.CG_ENEMY_CHANGE_TARGET:
+                    await EnemyTarget();
+                    break;
+                case Protocols.CG_ENEMY_DEAD:
+                    await EnemyDead();
+                    break;
+                case Protocols.CG_ENEMY_INJURED:
+                    await EnemyInjured();
+                    break;
+                case Protocols.CG_ENEMY_LOOT_NEW:
+                    await EnemyLootNew();
+                    break;
+                case Protocols.CG_ENEMY_LOOT:
+                    await EnemyLoot();
+                    break;
+                case Protocols.CG_ENEMY_REMOVE:
+                    await EnemyRemove();
+                    break;
+                case Protocols.CG_ENEMY_STATUS:
+                    await EnemyStatus();
                     break;
                 default:
                     Logger.Error($"{Enum.GetName(typeof(Protocols), (Protocols)packetType)} unimplemented");
@@ -435,6 +460,155 @@ class Responder
         GPGM p = new GPGM();
         p.m_iUserId = userId;
         p.m_Position = pos;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task EnemySpawn()
+    {
+        uint day = rpacket.ruint();
+        uint enemy = rpacket.ruint();
+        uint type = rpacket.ruint();
+        uint elite = rpacket.ruint();
+        uint grave = rpacket.ruint();
+        uint boss = rpacket.ruint();
+
+        Vector3 pos = new Vector3();
+        pos.FromReader(rpacket);
+
+        uint target = rpacket.ruint();
+
+        GEnemySpawn p = new GEnemySpawn();
+
+        p.m_enemy_wave = day;
+        p.m_enemy_Id = enemy;
+        p.m_enemy_type = type;
+        p.m_isElite = elite;
+        p.m_isGrave = grave;
+        p.m_isSuperBoss = boss;
+        p.m_Position = pos;
+        p.m_target_id = target;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task EnemyTarget()
+    {
+        string enemyId = rpacket.rstring();
+        uint target = rpacket.ruint();
+
+        GEnemyTarget p = new GEnemyTarget();
+        p.m_enemyID = enemyId;
+        p.target_id = target;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task EnemyDead()
+    {
+        uint playerId = rpacket.ruint();
+        string enemyId = rpacket.rstring();
+        uint type = rpacket.ruint();
+        uint elite = rpacket.ruint();
+        uint weapon = rpacket.ruint();
+
+        GEnemyDead p = new GEnemyDead();
+
+        p.m_iResult = 0u;
+        p.m_enemy_type = type;
+        p.bElite = elite;
+        p.weapon_type = weapon;
+
+        GEnemyDeadNotify not = new GEnemyDeadNotify();
+
+        not.enemy_id = enemyId;
+        not.iPlayerId = playerId;
+        not.m_enemy_type = type;
+        not.weapon_type = weapon;
+        not.bElite = elite;
+
+        await Clients.SendToClient(client, p.Pack());
+        await Rooms.SendToRoom(GetRoomId(client), not.Pack(), client);
+    }
+
+    async Task EnemyInjured()
+    {
+        string enemyId = rpacket.rstring();
+        ulong damage = rpacket.rulong();
+        uint wpndmg = rpacket.ruint();
+        uint crit = rpacket.ruint();
+
+        GEnemyInjured p = new GEnemyInjured();
+
+        p.m_enemyID = enemyId;
+        p.m_iDamage = (long)damage;
+        p.m_weapon_type = wpndmg;
+        p.m_critical_attack = crit;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task EnemyLootNew()
+    {
+        uint type = rpacket.ruint();
+        uint id = rpacket.ruint();
+
+        Vector3 pos = new Vector3();
+        pos.FromReader(rpacket);
+
+        GEnemyLootNew p = new GEnemyLootNew();
+
+        p.item_type = type;
+        p.id = id;
+        p.m_Position = pos;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task EnemyLoot()
+    {
+        uint type = rpacket.ruint();
+
+        Vector3 pos = new Vector3();
+        pos.FromReader(rpacket);
+
+        GEnemyLoot p = new GEnemyLoot();
+
+        p.item_type = type;
+        p.m_Position = pos;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task EnemyRemove()
+    {
+        string enemyId = rpacket.rstring();
+
+        GEnemyRemove p = new GEnemyRemove();
+        p.m_enemyID = enemyId;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task EnemyStatus()
+    {
+        string enemyId = rpacket.rstring();
+
+        Vector3 pos = new Vector3();
+        pos.FromReader(rpacket);
+
+        Vector3 rot = new Vector3();
+        rot.FromReader(rpacket);
+
+        Vector3 dir = new Vector3();
+        dir.FromReader(rpacket);
+
+        GEnemyStatus p = new GEnemyStatus();
+
+        p.m_enemyID = enemyId;
+        p.m_Position = pos;
+        p.m_Rotation = rot;
+        p.m_Direction = dir;
 
         await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
     }

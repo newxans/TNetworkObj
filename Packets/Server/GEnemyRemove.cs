@@ -5,7 +5,7 @@ namespace NetworkObj.Packets
 {
     class GEnemyRemove : ServerPacket
     {
-        public required string m_enemyID;
+        public string m_enemyID;
 
         public Writer Pack()
         {

@@ -163,14 +163,17 @@ class Responder
         uint days = rpacket.ruint();
         string password = rpacket.rstring();
 
-        User host = Clients.GetUser(client);
+        User? host = Clients.GetUser(client);
+        if (host == null) return;
         host.RoomMaster = true;
         host.Name = nickname;
         host.Avatar = (int)avatar;
         host.Level = (int)days;
 
         int RoomId = Rooms.CreateRoom(client, password);
-        Rooms.GetRoom(RoomId).MapId = (int)mapId;
+        Room? room = Rooms.GetRoom(RoomId);
+        if (room == null) return;
+        room.MapId = (int)mapId;
 
         host.RoomId = RoomId;
         p.m_iResult = 0u;
@@ -191,7 +194,8 @@ class Responder
 
     async Task StartRoom()
     {
-        User host = Clients.GetUser(client);
+        User? host = Clients.GetUser(client);
+        if (host == null) return;
         if (host.RoomId == -1 || !host.RoomMaster) return;
 
         Logger.Log($"Room {host.RoomId} started");
@@ -202,8 +206,8 @@ class Responder
 
     async Task DestroyRoom()
     {
-        User host = Clients.GetUser(client);
-
+        User? host = Clients.GetUser(client);
+        if (host == null) return;
         if (host.RoomId == -1 || !host.RoomMaster) return;
 
         Logger.Log($"Room {host.RoomId} destroyed");
@@ -214,13 +218,15 @@ class Responder
 
     async Task LeaveRoom()
     {
-        User user = Clients.GetUser(client);
+        User? user = Clients.GetUser(client);
+        if (user == null) return;
         if (user.RoomId == -1) return;
 
         GLeaveRoom notify = new GLeaveRoom();
         notify.m_iUserId = (uint)user.UserId;
 
         Room? r = Rooms.GetRoom(user.RoomId);
+        if (r == null) return;
 
         r.Online = r.Online - 1;
 
@@ -242,7 +248,8 @@ class Responder
 
         if (room == null) return;
 
-        User creator = Clients.GetUser(room.Players[0]);
+        User? creator = Clients.GetUser(room.Players[0]);
+        if (creator == null) return;
 
         GRoomInfo p = new GRoomInfo();
 
@@ -267,8 +274,10 @@ class Responder
         uint avt = rpacket.ruint();
         uint days = rpacket.ruint();
 
-        User user = Clients.GetUser(client);
+        User? user = Clients.GetUser(client);
+        if (user == null) return;
         Room? room = Rooms.GetRoom((int)roomId);
+        if (room == null) return;
 
         GJoinRoom p = new GJoinRoom();
         if (room == null)
@@ -287,6 +296,7 @@ class Responder
             p.m_iRoomId = roomId;
         }
 
+        if (room == null) return;
         p.m_map_id = (uint)room.MapId;
         p.m_lLocalTime = (long)localTime;
         p.m_lServerTime = (long)localTime;
@@ -306,7 +316,8 @@ class Responder
         room.Players.ForEach(async (TcpClient rando) => {
             if (!(client == rando))
             {
-                User ruser = Clients.GetUser(rando);
+                User? ruser = Clients.GetUser(rando);
+                if (ruser == null) return;
                 GJoinRoomNotify notify2 = new GJoinRoomNotify();
                 notify2.m_room_index = (uint)ruser.Index;
                 notify2.m_strNickname = ruser.Name;
@@ -339,7 +350,8 @@ class Responder
         uint wp2 = rpacket.ruint();
         uint wp3 = rpacket.ruint();
 
-        User user = Clients.GetUser(client);
+        User? user = Clients.GetUser(client);
+        if (user == null) return;
 
         GPlayerSpawn p = new GPlayerSpawn();
 
@@ -364,7 +376,7 @@ class Responder
         p.m_iUserId = userId;
         p.m_iAction = actionId;
 
-        await Rooms.SendToRoom(Clients.GetUser(client).RoomId, p.Pack(), client);
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
     }
 
     async Task PlayerBonusAction()
@@ -377,7 +389,7 @@ class Responder
         p.m_iUserId = userId;
         p.m_iBonusAction = auxActionId;
 
-        await Rooms.SendToRoom(Clients.GetUser(client).RoomId, p.Pack(), client);
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
     }
 
     async Task PlayerMove() // credit: overmet15 for vector struct otherwise sync would be TERRIBLE
@@ -403,7 +415,7 @@ class Responder
         p.dir = dir;
         p.m_iPingTime = local;
 
-        await Rooms.SendToRoom(Clients.GetUser(client).RoomId, p.Pack(), client);
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
     }
 
     async Task PlayerInjury()
@@ -431,7 +443,8 @@ class Responder
         p.m_iUserId = userId;
         p.protocol = Protocols.GC_USER_REVIVE;
 
-        Room y = Rooms.GetRoom(GetRoomId(client));
+        Room? y = Rooms.GetRoom(GetRoomId(client));
+        if (y == null) return;
         y.Dead = y.Dead - 1;
 
         await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
@@ -450,7 +463,8 @@ class Responder
         take.m_iActionRevived = action;
         take.m_iUserRevived = userId;
 
-        Room y = Rooms.GetRoom(GetRoomId(client));
+        Room? y = Rooms.GetRoom(GetRoomId(client));
+        if (y == null) return;
         y.Dead = y.Dead - 1;
 
         await Rooms.SendToRoom(GetRoomId(client), p.Pack());
@@ -633,7 +647,8 @@ class Responder
 
     async Task Dead()
     {
-        Room y = Rooms.GetRoom(GetRoomId(client));
+        Room? y = Rooms.GetRoom(GetRoomId(client));
+        if (y == null) return;
         y.Dead = y.Dead + 1;
 
         if (y.Dead == y.Online)
@@ -670,9 +685,10 @@ class Responder
     async Task Kick()
     {
         uint userId = rpacket.ruint();
-        Room room = Rooms.GetRoom(GetRoomId(client));
-
-        if (room == null || !Clients.GetUser(client).RoomMaster) return;
+        Room? room = Rooms.GetRoom(GetRoomId(client));
+        User? s = Clients.GetUser(client);
+        if (s == null) return;
+        if (room == null || !s.RoomMaster) return;
 
         GStandard notify = new GStandard();
 
@@ -688,8 +704,8 @@ class Responder
 
         room.Players.ForEach(async (TcpClient rando) =>
         {
-            User user = Clients.GetUser(rando);
-
+            User? user = Clients.GetUser(rando);
+            if (user == null) return;
             if (user.UserId == userId)
             {
                 random = rando;
@@ -704,7 +720,9 @@ class Responder
 
     int GetRoomId(TcpClient c)
     {
-        return Clients.GetUser(c).RoomId;
+        User? hi = Clients.GetUser(c);
+        if (hi == null) return -1;
+        return hi.RoomId;
     }
 
     Writer DefaultPacket(Protocols packetType, bool result = false)

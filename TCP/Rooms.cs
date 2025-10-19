@@ -9,7 +9,7 @@ namespace NetworkObj.TCP
 
         public static int CreateRoom(TcpClient client, string Password)
         {
-            User user = Clients.GetUser(client);
+            User? user = Clients.GetUser(client);
 
             if (user == null)
             {
@@ -18,7 +18,7 @@ namespace NetworkObj.TCP
             }
 
             int roomId = new Random().Next(1, 9999);
-            if (rooms.TryGetValue(roomId, out Room _))
+            if (rooms.TryGetValue(roomId, out Room? _))
             {
                 Logger.Log("Already existing room tried to get created, recreating...");
                 //CreateRoom(client, Password);
@@ -51,7 +51,9 @@ namespace NetworkObj.TCP
             if (!rooms.TryGetValue(roomId, out Room? room)) return;
             room.Players.Remove(client);
             room.Online = room.Online - 1;
-            Logger.Log($"User {Clients.GetUser(client).UserId} left Room {roomId}");
+            User? x = Clients.GetUser(client);
+            if (x == null) return;
+            Logger.Log($"User {x.UserId} left Room {roomId}");
         }
 
         public static Room? GetRoom(int roomid)

@@ -5,7 +5,7 @@ namespace NetworkObj.Packets
 {
     class GEnemyStatus : ServerPacket
     {
-        public string m_enemyID;
+        public string? m_enemyID;
 
         public Vector3 m_Position;
 
@@ -16,6 +16,7 @@ namespace NetworkObj.Packets
         public Writer Pack()
         {
             Writer p = new Writer();
+            if (m_enemyID == null) return Packet.Pack(Protocols.CG_KICK_USER, p);
             byte[] enemyId = Encoding.ASCII.GetBytes(m_enemyID);
             p.wuint((uint)enemyId.Length);
             p.wbytes(enemyId);

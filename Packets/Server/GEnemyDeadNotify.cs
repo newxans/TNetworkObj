@@ -7,7 +7,7 @@ namespace NetworkObj.Packets
     {
         public uint iPlayerId;
 
-        public string enemy_id;
+        public string? enemy_id;
 
         public uint m_enemy_type;
 
@@ -19,6 +19,7 @@ namespace NetworkObj.Packets
         {
             Writer p = new Writer();
             p.wuint(iPlayerId);
+            if (enemy_id == null) return Packet.Pack(Protocols.CG_KICK_USER, p);
             byte[] enemyId = Encoding.ASCII.GetBytes(enemy_id);
             p.wuint((uint)enemyId.Length);
             p.wbytes(enemyId);

@@ -124,6 +124,12 @@ class Responder
                 case Protocols.CG_ENEMY_STATUS:
                     await EnemyStatus();
                     break;
+                case Protocols.CG_USER_DEAD:
+                    await Dead();
+                    break;
+                case Protocols.CG_GAME_OVER:
+                    await GameOver();
+                    break;
                 default:
                     Logger.Error($"{Enum.GetName(typeof(Protocols), (Protocols)packetType)} unimplemented");
                     break;
@@ -419,6 +425,9 @@ class Responder
         p.m_iUserId = userId;
         p.protocol = Protocols.GC_USER_REVIVE;
 
+        Room y = Rooms.GetRoom(GetRoomId(client));
+        y.Dead = y.Dead - 1;
+
         await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
     }
 
@@ -434,6 +443,9 @@ class Responder
         GTakeMedkit take = new GTakeMedkit();
         take.m_iActionRevived = action;
         take.m_iUserRevived = userId;
+
+        Room y = Rooms.GetRoom(GetRoomId(client));
+        y.Dead = y.Dead - 1;
 
         await Rooms.SendToRoom(GetRoomId(client), p.Pack());
         await Rooms.SendToRoom(GetRoomId(client), take.Pack());
@@ -611,6 +623,33 @@ class Responder
         p.m_Direction = dir;
 
         await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+    async Task Dead()
+    {
+        Room y = Rooms.GetRoom(GetRoomId(client));
+        y.Dead = y.Dead + 1;
+
+        if (y.Dead == y.Online)
+        {
+            await Task.Run(async () =>
+            {
+                await Task.Delay(10000);
+                if (y.Dead == y.Online)
+                {
+                    await Rooms.DeleteRoom(GetRoomId(client));
+                }
+            });
+        }
+    }
+
+    async Task GameOver()
+    {
+        uint userId = rpacket.ruint(); // TODO: Anti-Cheat that disconnects player that sends any movement whilst dead.
+        GStandard p = new GStandard();
+        p.m_iUserId = userId;
+        p.protocol = Protocols.GC_GAME_OVER;
+        await Clients.SendToClient(client, p.Pack());
     }
 
     int GetRoomId(TcpClient c)

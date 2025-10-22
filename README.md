@@ -11,7 +11,7 @@ All of 3.1-4.2 is lost media. me and @LITTLECHOPT8 are looking for some of these
 - [ ] Enter to stop
 - [ ] Fix disconnect
 - [ ] Rework logger
-- [ ] Start command (.\NetworkObj -s 1 -p 4201)
+- [x] Start command (.\NetworkObj -s 1 -p 4201)
 ### Boss Raid
 (This TO-DO was made whenever I basically finished boss raid.)
 - [x] Add Item pickup sync

@@ -136,6 +136,9 @@ class Responder
                 case Protocols.CG_KICK_USER:
                     await Kick();
                     break;
+                case Protocols.CG_ITEM_PICK:
+                    await PickItem();
+                    break;
                 default:
                     Logger.Error($"{Enum.GetName(typeof(Protocols), (Protocols)packetType)} unimplemented");
                     break;
@@ -718,14 +721,26 @@ class Responder
         await Rooms.LeaveRoom(GetRoomId(client), random);
     }
 
-    int GetRoomId(TcpClient c)
+    async Task PickItem()
+    {
+        uint id = rpacket.ruint();
+
+        GStandard p = new GStandard();
+        p.m_iUserId = id;
+        p.protocol = Protocols.GC_ITEM_PICK;
+
+        await Rooms.SendToRoom(GetRoomId(client), p.Pack(), client);
+    }
+
+
+    private int GetRoomId(TcpClient c)
     {
         User? hi = Clients.GetUser(c);
         if (hi == null) return -1;
         return hi.RoomId;
     }
 
-    Writer DefaultPacket(Protocols packetType, bool result = false)
+    private Writer DefaultPacket(Protocols packetType, bool result = false)
     {
         Writer packet = new Writer();
 

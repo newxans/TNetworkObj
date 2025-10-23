@@ -6,14 +6,14 @@ namespace NetworkObj.TCP
 {
     class Listener
     {
-        public async Task Start(IPAddress IP, int Port)
+        public async Task Start(IPAddress IP, int Port, CancellationToken Token)
         {
             TcpListener listener = new TcpListener(IP, Port);
             listener.Start();
 
             Logger.Info($"Server started at {IP}:{Port}");
 
-            while (true)
+            while (!Token.IsCancellationRequested)
             {
                 TcpClient client = await listener.AcceptTcpClientAsync();
 
@@ -31,6 +31,8 @@ namespace NetworkObj.TCP
                     }
                 });
             }
+
+            listener.Stop();
         }
     }
 }

@@ -13,6 +13,7 @@ namespace NetworkObj
         private static bool indexedPort = false;
         private static int port = 4201;
         private static int server = 1;
+        private static CancellationTokenSource cts = new CancellationTokenSource();
 
         static async Task Main(string[] args)
         {
@@ -67,9 +68,11 @@ namespace NetworkObj
             Listener Server = new Listener();
             IPAddress IP = IPAddress.Any;
 
-            await Server.Start(IP, port);
+            await Server.Start(IP, port, cts.Token);
 
             Console.ReadLine();
+
+            cts.Cancel();
         }
     }
 }
